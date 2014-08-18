@@ -1,0 +1,137 @@
+/*
+ * main.c
+ *
+ *
+ *  Created on: 14.08.2013
+ *      Author: alexs
+ */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <syslog.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include "rfid.h"
+//#include "bcm2835.h"
+//#include "config.h"
+#include "spidev_nfc.h" 
+#include "spidev.h" 
+#include <stdint.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include "spidev.h"
+
+
+void usage(char *);
+char *KeyA="Test01";
+char *KeyB="Test10";
+uint8_t debug=0;
+
+
+int main(int argc, char *argv[]) {
+
+	uid_t uid;
+	uint8_t SN[10];
+	uint16_t CType=0;
+	uint8_t SN_len=0;
+	char status;
+	int tmp,i;
+
+	char str[255];
+	char *p;
+	char sn_str[23];
+	pid_t child;
+	int max_page=0;
+	uint8_t page_step=0;
+
+	FILE * fmem_str;
+	char save_mem=0;
+	char fmem_path[255];
+	uint8_t use_gpio=0;
+	uint8_t gpio=255;
+	uint32_t spi_speed=10000000L;
+	int fd = -1 ;
+	if( (fd = spi_open() )< 0) return -1 ;
+	/*
+	 * spi mode
+	 */
+	unsigned char mode = 3;
+	unsigned char mode_t ;
+	unsigned char bits = 8 ;
+	unsigned int  speed = 120000000 ;
+	int ret = -1 ;
+	ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
+	if (ret == -1)
+		printf("can't set spi mode");
+
+	ret = ioctl(fd, SPI_IOC_RD_MODE, &mode_t);
+	if (ret == -1)
+		printf("can't get spi mode");
+
+	/*
+	 * bits per word
+	 */
+	ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
+	if (ret == -1)
+		printf("can't set bits per word");
+
+	unsigned char bits_t ;
+	ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits_t);
+	if (ret == -1)
+		printf("can't get bits per word");
+
+	/*
+	 * max speed hz
+	 */
+	ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
+	if (ret == -1)
+		printf("can't set max speed hz");
+
+	unsigned int  speed_t ;
+	ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed_t);
+	if (ret == -1)
+		printf("can't get max speed hz");
+
+	printf("spidev hw info : mode:%d  bits:%d speed:%d\n",mode_t,bits_t,speed_t) ;
+
+//many changes in InitRc522 function, please check it.	
+	InitRc522();
+#if 0
+
+	for (;;) {
+		status= find_tag(&CType);
+		printf("status is [%d] :Ctype [%x] \n",status,CType) ;
+		if (status==TAG_NOTAG) {
+			printf("find tag again !\n") ;
+			usleep(200000);
+			continue;
+		}else if ((status!=TAG_OK)&&(status!=TAG_COLLISION)) {
+			printf("status!=TAG_OK)&&(status!=TAG_COLLISION again \n") ;
+			continue;
+		}
+		printf("Ctype is %d\n",CType);
+		if (select_tag_sn(SN,&SN_len)!=TAG_OK) {
+			printf("select_tag_sn(SN,&SN_len)!=TAG_OK) again \n") ;
+			continue;
+		}
+
+		read_tag_str(0,str);
+		printf("str:%s\n",str) ;
+		PcdHalt();
+		break  ;
+	}
+#endif
+	printf("now start close spi orpe.....\n");
+	spi_close() ; 
+
+	return 0;
+
+}
+
+
